@@ -1,0 +1,76 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-06-01 09:52:28 
+ * @Description: 逐顶点高光反射
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      properties: &props
+        diffuse:        { value: [1, 1, 1, 1], editor: { type: color, displayName: "漫反射率"} }
+        specular:       { value: [1, 1, 1, 1], editor: { type: color, displayName: "高光反射率"} }
+        gloss:          { value: 20, editor: { type: float, range: [8, 256], displayName: "反向高光强度", } }
+  - name: transparent
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram vs%{
+  precision highp float;
+
+  #include "../Util/Util"
+  #include <input-standard>
+  #include <cc-local>
+  #include <cc-global>
+
+  uniform InputData{
+    vec4 diffuse;
+    vec4 specular;
+    float gloss;
+  };
+
+  out vec4 color;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    vec3 worldNormal = normalize((cc_matWorld * vec4(vertex.normal, 0.0)).xyz);
+    vec3 worldLightDir = normalize(-cc_mainLitDir.xyz);
+    
+    vec3 diffuseColor = cc_mainLitColor.rgb * diffuse.rgb * max(0.0, dot(worldNormal, worldLightDir));
+  
+    vec3 reflectDir = normalize(reflect(cc_mainLitDir.xyz, worldNormal));
+    vec3 viewDir = normalize(cc_cameraPos.xyz - (cc_matWorld * vertex.position).xyz);
+    vec3 specularColor = cc_mainLitColor.rgb * specular.rgb * pow(max(0.0, dot(reflectDir, viewDir)), gloss);
+
+    color = vec4(getAmbient().rgb + diffuseColor + specularColor, 1.0);
+
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+CCProgram fs%{
+  precision highp float;
+
+  in vec4 color;
+
+  vec4 frag(){
+    return color;
+  }
+
+}%

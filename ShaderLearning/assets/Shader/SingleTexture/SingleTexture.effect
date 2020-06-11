@@ -1,0 +1,99 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-06-11 13:46:57 
+ * @Description: 单张纹理效果
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      properties: &props
+        color:              { value: [1, 1, 1, 1],  editor: { displayName: "颜色", type: color } }
+        mainTexture:        { value: white,         editor: { displayName: "主材质", type: sampler2D } }
+        mainTextureScale:   { value: [1, 1],        editor: { displayName: "主材质缩放", type: vec2},     target: mainTextureST.xy  }
+        mainTextureOffset:  { value: [0, 0],        editor: { displayName: "主材质平移", type: vec2},     target: mainTextureST.zw  }
+        mainTextureST:      { value: [1, 1, 0, 0],  editor: { displayName: "缩放"}}
+        specular:           { value: [1, 1, 1, 1],  editor: { displayName: "高光反射率", type: color} }
+        gloss:              { value: 20,            editor: { displayName: "高光反向强度", type: float} }
+  - name: transparent
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram vs %{
+  precision highp float;
+
+  #include "../Util/Util"
+  #include <input-standard>
+  #include <cc-local>
+
+  uniform VertexData{
+    vec4 mainTextureST;
+  };
+
+  in vec2 a_texCoord;
+
+  out vec3 worldNormal;
+  out vec3 worldPos;
+  out vec2 uv;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    worldNormal = normalize((cc_matWorld * vec4(vertex.normal, 0.0)).xyz);
+    worldPos = (cc_matWorld * vertex.position).xyz;
+
+    uv = a_texCoord * mainTextureST.xy + mainTextureST.zw;
+
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+
+CCProgram fs %{
+  precision highp float;
+
+  #include "../Util/Util"
+  #include <cc-global>
+
+  uniform sampler2D mainTexture;
+
+  uniform FragmentData{
+    vec4 color;
+    vec4 specular;
+    float gloss;
+  };
+
+  in vec3 worldNormal;
+  in vec3 worldPos;
+  in vec2 uv;
+
+  vec4 frag(){
+    vec3 worldLightDir = -cc_mainLitDir.xyz;
+  
+    vec3 albedo = texture(mainTexture, uv).rgb * color.rgb;
+
+    vec3 ambient = getAmbient().rgb * albedo;
+    vec3 diffuseColor = cc_mainLitColor.rgb * albedo * max(0.0, dot(worldNormal, worldLightDir));
+    vec3 viewDir = normalize(cc_cameraPos.xyz - worldPos);
+    vec3 halfDir = normalize(viewDir + worldLightDir);
+    vec3 specularColor = cc_mainLitColor.rgb * specular.rgb * pow(max(0.0, dot(worldNormal, halfDir)), gloss);
+
+    return vec4(ambient + diffuseColor + specularColor, 1.0);
+  }
+
+}%

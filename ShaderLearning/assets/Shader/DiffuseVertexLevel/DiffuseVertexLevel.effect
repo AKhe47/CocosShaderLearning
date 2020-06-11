@@ -1,0 +1,72 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-05-30 11:01:30 
+ * @Description: 逐顶点漫反射
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      properties: &props
+        diffuse:        { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color, displayName: "反射率"} }
+  - name: transparent
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram vs%{
+  precision highp float;
+
+  #include <input-standard>
+  #include <cc-local>
+  #include <cc-global>
+  #include "../Util/Util"
+
+  out vec4 o_color;
+
+  uniform InputData{
+    vec4 diffuse;
+  };
+
+  vec4 vert(){  
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    vec3 ambient = getAmbient().rgb;
+
+    vec3 worldNormal = normalize((cc_matWorld * vec4(vertex.normal, 0.0)).xyz);
+    vec3 worldLight = -cc_mainLitDir.xyz;
+
+    vec3 diffuseColor = cc_mainLitColor.rgb * diffuse.rgb * max(0.0, dot(worldNormal, worldLight));
+    
+    o_color = vec4(ambient + diffuseColor, 1.0);
+
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+CCProgram fs%{
+  precision highp float;
+
+  #include <output>
+
+  in vec4 o_color;
+
+  vec4 frag () {
+    return o_color;
+  }
+
+}%

@@ -1,0 +1,73 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-06-01 08:43:05 
+ * @Description: 逐像素漫反射
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      properties: &props
+        diffuse:        { value: [1, 1, 1, 1], editor: { type: color, displayName: "反射率"} }
+  - name: transparent
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram vs %{
+  precision highp float;
+
+  #include "../Util/Util"
+  #include <input-standard>
+  #include <cc-local>
+
+  out vec3 worldNormal;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    worldNormal = normalize((cc_matWorld * vec4(vertex.normal, 0.0)).xyz);
+
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+CCProgram fs %{
+  precision highp float;
+
+  #include <cc-global>
+  #include "../Util/Util"
+
+  uniform InputData{
+    vec4 diffuse;
+  };
+
+  in vec3 worldNormal;
+
+  vec4 frag(){
+    vec3 ambient = getAmbient().rgb;
+    vec3 worldLightDir = normalize(-cc_mainLitDir.xyz);
+    
+    // vec3 diffuseColor = cc_mainLitColor.rgb * diffuse.rgb * max(0.0, dot(worldNormal, worldLightDir));
+    
+    // 半兰伯特
+    float halfLambert = dot(worldNormal, worldLightDir) * 0.5 + 0.5;
+    vec3 diffuseColor = cc_mainLitColor.rgb * diffuse.rgb * halfLambert;
+
+    return vec4(ambient + diffuseColor, 1.0);
+  }
+}%

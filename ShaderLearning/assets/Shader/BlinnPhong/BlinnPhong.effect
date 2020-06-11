@@ -1,0 +1,80 @@
+/*
+ * @Author: Dreamy Icecream  
+ * @Date: 2020-06-01 14:53:41 
+ * @Description: Blinn-Phong光照模型
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      properties: &props
+        diffuse:        { value: [1, 1, 1, 1], editor: { displayName: "漫反射率", type: color } }
+        specular:       { value: [1, 1, 1, 1], editor: { displayName: "高光反射率", type: color } }
+        gloss:          { value: 20, editor: { displayName: "高光反向强度", type: float } }
+  - name: transparent 
+    passes:
+    - vert: vs:vert 
+      frag: fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram vs %{
+  precision highp float;
+
+  #include "../Util/Util"
+  #include <input-standard>
+  #include <cc-local>
+
+  out vec3 worldNormal;
+  out vec3 worldPosition;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+    
+    worldNormal = normalize((cc_matWorld * vec4(vertex.normal, 0.0)).xyz);
+    worldPosition = (cc_matWorld * vertex.position).xyz;
+
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+CCProgram fs %{
+  precision highp float;
+
+  #include "../Util/Util"
+  #include <cc-global>
+
+  uniform InputData{
+    vec4 diffuse;
+    vec4 specular;
+    float gloss;
+  };
+
+  in vec3 worldNormal;
+  in vec3 worldPosition;
+
+  vec4 frag(){
+    vec3 worldLightDir = -cc_mainLitDir.xyz;
+
+    vec3 diffuseColor = cc_mainLitColor.rgb * diffuse.rgb * max(0.0, dot(worldNormal, worldLightDir));
+    
+    vec3 viewDir = normalize(cc_cameraPos.xyz - worldPosition);
+    vec3 halfDir = normalize(viewDir + worldLightDir);
+    vec3 specularColor = cc_mainLitColor.rgb * specular.rgb * pow(max(0.0, dot(worldNormal, halfDir)), gloss);
+
+    return vec4(getAmbient().rgb + diffuseColor + specularColor, 1.0);
+  }
+
+}%
