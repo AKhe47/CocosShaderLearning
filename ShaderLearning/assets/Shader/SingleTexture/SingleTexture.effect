@@ -14,7 +14,7 @@ CCEffect %{
         color:              { value: [1, 1, 1, 1],  editor: { displayName: "颜色", type: color } }
         mainTexture:        { value: white,         editor: { displayName: "主材质", type: sampler2D } }
         mainTextureScale:   { value: [1, 1],        editor: { displayName: "主材质缩放", type: vec2},     target: mainTextureST.xy  }
-        mainTextureOffset:  { value: [0, 0],        editor: { displayName: "主材质平移", type: vec2},     target: mainTextureST.zw  }
+        mainTextureOffset:  { value: [0, 0],        editor: { displayName: "主材质偏移", type: vec2},     target: mainTextureST.zw  }
         mainTextureST:      { value: [1, 1, 0, 0],  editor: { displayName: "缩放"}}
         specular:           { value: [1, 1, 1, 1],  editor: { displayName: "高光反射率", type: color} }
         gloss:              { value: 20,            editor: { displayName: "高光反向强度", type: float} }
