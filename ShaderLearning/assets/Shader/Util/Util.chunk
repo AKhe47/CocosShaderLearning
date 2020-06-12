@@ -6,6 +6,7 @@
 
 #include <cc-global>
 #include <cc-local>
+#include <input-standard>
 
 #define iResolution cc_screenSize
 #define iTime cc_time.x
@@ -35,4 +36,18 @@ vec4 getAmbient(){
 /** 将模型坐标下的矢量转化为世界坐标 */
 vec4 getWorldVec4(vec4 objectVector){
   return cc_matWorld * vector;
+}
+
+/** 得到从模型空间转换到切线空间的转换矩阵 */
+mat3 getTangentSpaceRotation(StandardVertInput v){
+  vec3 binormal = cross(normalize(v.normal), normalize(v.tangent.xyz)) * v.tangent.w;
+  return mat3(v.tangent.xyz, binormal, v.normal);
+}
+
+/** 解压法线图，得到对应法线 */
+vec3 unpackNormal(vec4 packedNormal, float normalScale){
+  vec3 normal;
+  normal.xy = (packedNormal.xy * 2 - 1) * normalScale;
+  normal.z = sqrt(1.0 - dot(packedNormal.xy, packedNormal.xy));
+  return normal; 
 }
