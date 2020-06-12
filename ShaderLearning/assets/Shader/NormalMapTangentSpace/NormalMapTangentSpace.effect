@@ -10,15 +10,23 @@ CCEffect %{
   techniques:
   - name: opaque
     passes:
-    - vert: general-vs:vert # builtin header
-      frag: unlit-fs:frag
+    - vert: vs:vert
+      frag: fs:frag
       properties: &props
-        mainTexture:    { value: white }
-        mainColor:      { value: [1, 1, 1, 1], editor: { type: color } }
+        mainTexture:        { value: white,         editor: { displayName: "主纹理", type: sampler2D } }
+        normalMap:          { value: normal,        editor: { displayName: "法线贴图", type: sampler2D } }
+        mainTextureScale:   { value: [1, 1],        editor: { displayName: "主纹理缩放", type: vec2 }, target: mainTextureST.xy }
+        mainTextureOffset:  { value: [0, 0],        editor: { displayName: "主纹理偏移", type: vec2 }, target: mainTextureST.zw }
+        normalMapScale:     { value: [1, 1],        editor: { displayName: "法线贴图缩放", type: vec2 }, target: normalMapST.xy }
+        normalMapOffset:    { value: [0, 0],        editor: { displayName: "法线贴图偏移", type: vec2 }, target: normalMapST.zw }
+        color:              { value: [1, 1, 1, 1],  editor: { displayName: "颜色", type: color } }
+        specular:           { value: [1, 1, 1, 1],  editor: { displayName: "高光反射率", type: color } }
+        normalScale:        { value: 1.0,           editor: { displayName: "凹凸程度", type: float } }
+        gloss:              { value: 20,            editor: { displayName: "高光反向强度", type: float } }
   - name: transparent
     passes:
-    - vert: general-vs:vert # builtin header
-      frag: unlit-fs:frag
+    - vert: vs:vert
+      frag: fs:frag
       blendState:
         targets:
         - blend: true
@@ -29,18 +37,83 @@ CCEffect %{
       properties: *props
 }%
 
-CCProgram unlit-fs %{
+CCProgram vs %{
   precision highp float;
-  #include <output>
 
-  in vec2 v_uv;
-  uniform sampler2D mainTexture;
+  #include <input-standard>
+  #include "../Util/Util"
+  #include "cc-global"
+  #include "cc-local"
 
-  uniform Constant {
-    vec4 mainColor;
+  in vec2 a_texCoord;
+
+  uniform VertexInput{
+    vec4 mainTextureST;
+    vec4 normalMapST;
   };
 
-  vec4 frag () {
-    return CCFragOutput(mainColor * texture(mainTexture, v_uv));
+  out vec4 uv;
+  out vec3 lightDir;
+  out vec3 viewDir;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    uv.xy = a_texCoord.xy * mainTextureST.xy + mainTextureST.zw;
+    uv.zw = a_texCoord.xy * normalMapST.xy + normalMapST.zw;
+
+    //得到从模型空间转换到切线空间的转换矩阵
+    vec3 binormal = cross(normalize(vertex.normal), normalize(vertex.tangent.xyz)) * vertex.tangent.w;
+    mat3 rotation = mat3(vertex.tangent.xyz, binormal, vertex.normal);
+
+    lightDir = rotation * -cc_mainLitDir.xyz;
+    viewDir =  rotation * normalize((cc_matWorldIT * cc_cameraPos).xyz - vertex.position.xyz);
+
+    return objectToClipPos(vertex.position);
   }
+
+}%
+
+CCProgram fs %{
+  precision highp float;
+
+  #include "../Util/Util"
+
+  uniform sampler2D mainTexture;
+  uniform sampler2D normalMap;
+
+  uniform FragmentInput{
+    vec4 color;
+    vec4 specular;
+    float normalScale;
+    float gloss;
+  };
+
+  in vec4 uv;
+  in vec3 lightDir;
+  in vec3 viewDir;
+
+  vec4 frag(){
+    vec3 tangentLightDir = normalize(lightDir);
+    vec3 tangentViewDir = normalize(viewDir);
+
+    vec4 packedNormal = texture(normalMap, uv.zw);
+    
+    //解压法线图，得到对应法线
+    vec3 tangentNormal;
+    tangentNormal.xy = (packedNormal.xy * 2.0 - 1.0) * normalScale;
+    tangentNormal.z = sqrt(1.0 - dot(tangentNormal.xy, tangentNormal.xy));
+
+    vec3 albedo = texture(mainTexture, uv.xy).rgb * color.rgb;
+    vec3 ambient = getAmbient().rgb * albedo;
+
+    vec3 diffuseColor = cc_mainLitColor.rgb * albedo * max(0.0, dot(tangentNormal, lightDir));
+
+    vec3 halfDir = normalize(lightDir + viewDir);
+    vec3 specularColor = cc_mainLitColor.rgb * specular.rgb * pow(max(0.0, dot(tangentNormal, halfDir)), gloss);
+
+    return vec4(ambient + diffuseColor + specularColor, 1.0);
+  }
+
 }%
