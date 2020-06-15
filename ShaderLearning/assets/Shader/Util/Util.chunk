@@ -52,8 +52,7 @@ vec3 unpackNormal(vec4 packedNormal, float normalScale){
   return normal; 
 }
 
-/** 根据st，得到对应的uv坐标对应的rgba */
-vec4 transformTex(texture: sampler2D, uv: vec2, texST: vec4){
-  uv = uv * texST.xy + texST.zw;
-  return texture(texture, uv);
+/** 得到转换之后的uv坐标 */
+vec2 transformTex(vec2 uv, vec4 texST){
+  return uv * texST.xy + texST.zw;
 }
