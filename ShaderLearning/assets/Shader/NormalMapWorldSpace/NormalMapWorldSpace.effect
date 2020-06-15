@@ -1,0 +1,119 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-06-15 12:09:47 
+ * @Description: 世界空间下使用法线贴图计算光照
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      properties: &props
+        mainTexture:        { value: white,         editor: { displayName: "主材质", type: sampler2D } }
+        normalMap:          { value: normal,        editor: { displayName: "法线贴图", type: sampler2D } }
+        mainTextureScale:   { value: [1, 1],        editor: { displayName: "主材质缩放", type: vec2 }, target: mainTextureST.xy }
+        mainTextureOffset:  { value: [0, 0],        editor: { displayName: "主材质偏移", type: vec2 }, target: mainTextureST.zw }
+        normalMapScale:     { value: [1, 1],        editor: { displayName: "法线贴图缩放", type: vec2 }, target: normalMapST.xy }
+        normalMapOffset:    { value: [0, 0],        editor: { displayName: "法线贴图偏移", type: vec2 }, target: normalMapST.zw }
+        color:              { value: [1, 1, 1, 1],  editor: { displayName: "贴图颜色", type: color } }
+        specular:           { value: [1, 1, 1, 1],  editor: { displayName: "高光反射率", type: color } }
+        normalScale:        { value: 1,             editor: { displayName: "凹凸程度", type: float } }
+        gloss:              { value: 20,            editor: { displayName: "高光反向强度", type: float } }
+  - name: transparent 
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram vs %{
+  precision highp float;
+
+  #include <input-standard>
+  #include "../Util/Util"
+
+  uniform VertexInput{
+    vec4 mainTextureST;
+    vec4 normalMapST;
+  };
+
+  in vec2 a_texCoord;
+
+  out vec4 uv;
+  
+  out vec4 mtov0;
+  out vec4 mtov1;
+  out vec4 mtov2;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    uv.xy = a_texCoord * mainTextureST.xy + mainTextureST.zw;
+    uv.zw = a_texCoord * normalMapST.xy + normalMapST.zw;
+
+    vec3 worldPos = objectToWorld(vertex.position).xyz;
+    vec3 worldNormal = objectToWorld(vec4(vertex.normal, 0.0)).xyz;
+    vec3 worldTangent = objectToWorld(vec4(vertex.tangent.xyz, 0.0)).xyz;
+    vec3 worldBinormal = cross(worldNormal, worldTangent) * vertex.tangent.w;
+
+    mtov0 = vec4(worldTangent.x, worldBinormal.x, worldNormal.x, worldPos.x);
+    mtov1 = vec4(worldTangent.y, worldBinormal.y, worldNormal.y, worldPos.y);
+    mtov2 = vec4(worldTangent.z, worldBinormal.z, worldNormal.z, worldPos.z);
+    
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+CCProgram fs %{
+  precision highp float;
+
+  #include <cc-global>
+  #include "../Util/Util"
+
+  uniform sampler2D mainTexture;
+  uniform sampler2D normalMap;
+
+  uniform FragmentInput{
+    vec4 color;
+    vec4 specular;
+    float gloss;
+    float normalScale;
+  };
+
+  in vec4 uv;
+
+  in vec4 mtov0;
+  in vec4 mtov1;
+  in vec4 mtov2;
+
+  vec4 frag(){
+    vec3 worldPos = vec3(mtov0.w, mtov1.w, mtov2.w);
+    vec3 lightDir = -cc_mainLitDir.xyz; 
+    vec3 viewDir = normalize(cc_cameraPos.xyz - worldPos);
+  
+    vec3 packedNormal = unpackNormal(texture(normalMap, uv.zw), normalScale);
+    vec3 worldNormal = normalize(vec3(dot(mtov0.xyz, packedNormal), dot(mtov1.xyz, packedNormal), dot(mtov2.xyz, packedNormal)));
+
+    vec3 albedo = texture(mainTexture, uv.xy).rgb * color.rgb;
+    vec3 ambient = getAmbient().rgb * albedo;
+
+    vec3 diffuseColor = cc_mainLitColor.rgb * albedo * max(0.0, dot(worldNormal, lightDir));
+
+    vec3 halfDir = normalize(lightDir + viewDir);
+    vec3 specularColor = cc_mainLitColor.rgb * specular.rgb * pow(max(0.0, dot(worldNormal, halfDir)), gloss);
+
+    return vec4(ambient + diffuseColor + specularColor, 1.0);
+  }
+
+}%
