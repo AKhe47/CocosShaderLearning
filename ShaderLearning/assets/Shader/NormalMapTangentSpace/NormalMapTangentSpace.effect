@@ -68,7 +68,7 @@ CCProgram vs %{
     mat3 rotation = mat3(vertex.tangent.xyz, binormal, vertex.normal);
 
     lightDir = rotation * -cc_mainLitDir.xyz;
-    viewDir =  rotation * normalize((cc_matWorldIT * cc_cameraPos).xyz - vertex.position.xyz);
+    viewDir =  rotation * ((cc_matWorldIT * cc_cameraPos).xyz - vertex.position.xyz);
 
     return objectToClipPos(vertex.position);
   }
