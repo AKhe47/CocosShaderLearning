@@ -1,0 +1,87 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-06-15 22:42:15 
+ * @Description: 基础消融效果
+ * @Last Modified by: Dreamy Icecream
+ * @Last Modified time: 2020-06-15 23:32:01
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      properties: &props
+        mainTexture:      { value: white,         editor: { displayName: "主材质", type: sampler2D } } 
+        noiseTexture:     { value: grey,          editor: { displayName: "噪点材质", type: sampler2D } }
+        mainColor:        { value: [1, 1, 1, 1],  editor: { displayName: "主材质颜色", type: color } }
+        threshold:        { value: 0.5,           editor: { displayName: "控制阈值", type: float, range: [0, 1, 0.5] } }
+        mainTextureScale:   { value: [1, 1],      editor: { displayName: "主纹理缩放", type: vec2 }, target: mainTextureST.xy }
+        mainTextureOffset:  { value: [0, 0],      editor: { displayName: "主纹理偏移", type: vec2 }, target: mainTextureST.zw }
+        noiseTextureScale:     { value: [1, 1],   editor: { displayName: "噪点贴图缩放", type: vec2 }, target: noiseTextureST.xy }
+        noiseTextureOffset:    { value: [0, 0],   editor: { displayName: "噪点贴图偏移", type: vec2 }, target: noiseTextureST.zw }
+  - name: transparent
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram vs %{
+  precision highp float;
+
+  #include <input-standard>
+  #include "../../Util/Util"
+
+  in vec2 a_texCoord;
+
+  uniform VertexInput{
+    vec4 mainTextureST;
+    vec4 noiseTextureST;
+  };
+
+  out vec4 uv;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    uv.xy = transformTex(a_texCoord.xy, mainTextureST);
+    uv.zw = transformTex(a_texCoord.xy, noiseTextureST);
+
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+CCProgram fs %{
+  precision highp float;
+  
+  in vec4 uv;
+
+  uniform sampler2D mainTexture;
+  uniform sampler2D noiseTexture;
+
+  uniform FragmentInput{
+    vec4 mainColor;
+    float threshold;
+  };
+
+  vec4 frag(){
+    float cutout = texture(noiseTexture, uv.zw).r;
+    if(cutout <= threshold){
+      discard;
+    }
+
+    return texture(mainTexture, uv.xy) * mainColor;
+  }
+
+}%

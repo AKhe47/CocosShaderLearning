@@ -34,8 +34,8 @@ vec4 getAmbient(){
 }
 
 /** 将模型坐标下的矢量转化为世界坐标 */
-vec4 getWorldVec4(vec4 objectVector){
-  return cc_matWorld * vector;
+vec4 objectToWorld(vec4 objectVector){
+  return cc_matWorld * objectVector;
 }
 
 /** 得到从模型空间转换到切线空间的转换矩阵 */
@@ -47,7 +47,12 @@ mat3 getTangentSpaceRotation(StandardVertInput v){
 /** 解压法线图，得到对应法线 */
 vec3 unpackNormal(vec4 packedNormal, float normalScale){
   vec3 normal;
-  normal.xy = (packedNormal.xy * 2 - 1) * normalScale;
+  normal.xy = (packedNormal.xy * 2.0 - 1.0) * normalScale;
   normal.z = sqrt(1.0 - dot(packedNormal.xy, packedNormal.xy));
   return normal; 
+}
+
+/** 得到转换之后的uv坐标 */
+vec2 transformTex(vec2 uv, vec4 texST){
+  return uv * texST.xy + texST.zw;
 }
