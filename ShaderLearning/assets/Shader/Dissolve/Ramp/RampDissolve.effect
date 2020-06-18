@@ -1,0 +1,72 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-06-18 10:54:41 
+ * @Description: 渐变纹理消融效果
+ */
+
+ CCEffect %{
+  techniques:
+  - name: ramp
+    passes: 
+    - vert: vs:vert
+      frag: fs:frag
+	    properties: &props
+	      mainTexture:  { value: white, editor: { displayName: "主材质", type: sampler2D } }
+	      noiseTexture: { value: grey, editor: { displayName: "噪点材质", type: sampler2D } }
+	      rampTexture:  { value: white, editor: { displayName: "渐变材质", type: sampler2D } }
+	      threshold:    { value: 0.5, editor: { displayName: "控制阈值", type: float } }
+	      edgeLength:   { value: 0.03, editor: { displayName: "边界宽度控制", type: float } } 
+}%
+
+ CCProgram vs %{
+	precision highp float;
+
+	#include <input-standard>
+	#include "../../Util/Util"
+
+	in vec2 a_texCoord;
+
+	out vec4 uv_0;
+
+	vec4 vert(){
+		StandardVertInput vertex;
+		CCVertInput(vertex);
+
+		uv_0.xy = a_texCoord;
+		uv_0.zw = a_texCoord;
+
+		return objectToClipPos(vertex.position);
+	}
+
+ }%
+
+CCProgram fs %{
+	precision highp float;
+
+	in vec4 uv_0;
+
+	uniform sampler2D mainTexture;
+	uniform sampler2D noiseTexture;
+	uniform sampler2D rampTexture;
+
+	uniform FragmentData{
+		float threshold;
+		float edgeLength;
+	};
+
+	vec4 frag(){
+		float cutout = texture(noiseTexture, uv_0.zw).r;
+
+		if(cutout <= threshold){
+			discard;
+		}
+
+		float degree = min(1.0, (cutout - threshold) / edgeLength);
+		vec4 edgeColor = texture(rampTexture, vec2(degree, degree));
+
+		vec4 orgColor = texture(mainTexture, uv_0.xy);
+
+		return vec4(mix(edgeColor, orgColor, degree).rgb, 1.0);
+	}
+
+}%

@@ -1,0 +1,46 @@
+{
+  "__type__": "cc.Material",
+  "_name": "",
+  "_objFlags": 0,
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "2277ff34-c361-4c06-9485-89f39a49afcb"
+  },
+  "_techIdx": 0,
+  "_defines": [
+    {}
+  ],
+  "_states": [
+    {
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      },
+      "depthStencilState": {},
+      "rasterizerState": {}
+    }
+  ],
+  "_props": [
+    {
+      "mainTexture": {
+        "__uuid__": "357bf226-aeec-4eda-9043-5695be073ed3@6c48a"
+      },
+      "noiseTexture": {
+        "__uuid__": "da0834aa-1c00-413d-bd17-87b1ce09f259@6c48a"
+      },
+      "rampTexture": {
+        "__uuid__": "ff902923-f77f-4196-9d8c-3489f3bac2d6@6c48a"
+      },
+      "worldStartPosition": {
+        "__type__": "cc.Vec4",
+        "x": 1,
+        "y": 0,
+        "z": 0,
+        "w": 0
+      },
+      "maxDistance": 6,
+      "distanceEffect": 0.2
+    }
+  ]
+}

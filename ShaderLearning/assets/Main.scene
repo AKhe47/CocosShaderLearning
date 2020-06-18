@@ -25,7 +25,7 @@
         "__id__": 6
       },
       {
-        "__id__": 8
+        "__id__": 9
       }
     ],
     "_active": true,
@@ -33,7 +33,7 @@
     "_prefab": null,
     "autoReleaseAssets": false,
     "_globals": {
-      "__id__": 10
+      "__id__": 11
     },
     "_id": "2670d0e1-d3ab-41d9-8568-1edb6e06d165"
   },
@@ -191,14 +191,17 @@
     "_components": [
       {
         "__id__": 7
+      },
+      {
+        "__id__": 8
       }
     ],
     "_prefab": null,
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": 2.613,
-      "y": -2.542,
-      "z": -7.163
+      "x": 0.485,
+      "y": 0,
+      "z": -4.356
     },
     "_lrot": {
       "__type__": "cc.Quat",
@@ -232,7 +235,7 @@
     "_enabled": true,
     "_materials": [
       {
-        "__uuid__": "551c224c-5cb6-49ed-9d63-f29a4faa53cc"
+        "__uuid__": "399244e5-b130-4ba5-a9fa-8cd671a433ed"
       }
     ],
     "_visFlags": 0,
@@ -241,6 +244,16 @@
     },
     "_shadowCastingMode": 1,
     "_id": "fbHCTj2JdKv6O29ByEP3xW"
+  },
+  {
+    "__type__": "f5f28ip5HdPEqhUm396q105",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 6
+    },
+    "_enabled": true,
+    "_id": "b5FEwA4AtLwaSpVGy6Mnir"
   },
   {
     "__type__": "cc.Node",
@@ -253,7 +266,7 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 9
+        "__id__": 10
       }
     ],
     "_prefab": null,
@@ -290,7 +303,7 @@
     "_name": "Cylinder<ModelComponent>",
     "_objFlags": 0,
     "node": {
-      "__id__": 8
+      "__id__": 9
     },
     "_enabled": true,
     "_materials": [
@@ -308,13 +321,13 @@
   {
     "__type__": "cc.SceneGlobals",
     "ambient": {
-      "__id__": 11
-    },
-    "planarShadows": {
       "__id__": 12
     },
-    "_skybox": {
+    "planarShadows": {
       "__id__": 13
+    },
+    "_skybox": {
+      "__id__": 14
     }
   },
   {

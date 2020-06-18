@@ -38,6 +38,11 @@ vec4 objectToWorld(vec4 objectVector){
   return cc_matWorld * objectVector;
 }
 
+/** 将世界坐标转化为模型空间坐标 */
+vec4 worldToObject(vec4 worldVector){
+  return cc_matWorldIT * worldVector;
+}
+
 /** 得到从模型空间转换到切线空间的转换矩阵 */
 mat3 getTangentSpaceRotation(StandardVertInput v){
   vec3 binormal = cross(normalize(v.normal), normalize(v.tangent.xyz)) * v.tangent.w;
