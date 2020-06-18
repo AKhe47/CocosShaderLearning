@@ -32,15 +32,10 @@
       "rampTexture": {
         "__uuid__": "ff902923-f77f-4196-9d8c-3489f3bac2d6@6c48a"
       },
-      "worldStartPosition": {
-        "__type__": "cc.Vec4",
-        "x": 1,
-        "y": 0,
-        "z": 0,
-        "w": 0
-      },
-      "maxDistance": 6,
-      "distanceEffect": 0.2
+      "threshold": 0,
+      "edgeLength": 0.01,
+      "maxDistance": 3,
+      "distanceEffect": 1
     }
   ]
 }

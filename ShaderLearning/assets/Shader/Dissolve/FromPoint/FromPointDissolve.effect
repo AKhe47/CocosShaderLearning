@@ -10,11 +10,13 @@ CCEffect %{
     passes:
     - vert: vs:vert
       frag: fs:frag
+      rasterizerState:
+        cullMode: none
       properties: &props
         mainTexture:         { value: white, editor: { displayName: "主材质", type: sampler2D } }
         noiseTexture:        { value: grey, editor: { displayName: "噪点材质", type: sampler2D } }
         rampTexture:         { value: white, editor: { displayName: "渐变材质", type: sampler2D } }
-        worldStartPosition:  { value: [0, 0, 0, 0], editor: { displayName: "消融起始位置", type: vec4 } }
+        objectStartPosition:  { value: [0, 0, 0, 0], editor: { displayName: "消融起始位置", type: vec4 } }
         threshold:           { value: 0.5, editor: { displayName: "控制阈值", type: float } }
         edgeLength:          { value: 0.03, editor: { displayName: "边界宽度控制", type: float } }
         maxDistance:         { value: 10, editor: { displayName: "起始点到模型最远定点的距离", type: float } }
@@ -27,14 +29,9 @@ CCProgram vs %{
   #include <input-standard>
   #include "../../Util/Util"
 
-  uniform VertexData{
-    vec4 worldStartPosition;
-  };
-
   in vec2 a_texCoord;
 
   out vec4 objectPosition;
-  out vec4 objectStartPosition;
   out vec4 uv;
 
   vec4 vert(){
@@ -45,7 +42,6 @@ CCProgram vs %{
     uv.zw = a_texCoord;
 
     objectPosition = vertex.position;
-    objectStartPosition = worldToObject(worldStartPosition);
 
     return objectToClipPos(vertex.position);
   }
@@ -60,6 +56,7 @@ CCProgram fs %{
   uniform sampler2D rampTexture;
 
   uniform FragmentData{
+    vec4 objectStartPosition;
     float threshold;
     float edgeLength;
     float maxDistance;
@@ -68,10 +65,9 @@ CCProgram fs %{
 
   in vec4 uv;
   in vec4 objectPosition;
-  in vec4 objectStartPosition;
 
   vec4 frag(){
-    float dist = smoothstep(0.0, 1.0, length(objectPosition - objectStartPosition) / maxDistance);
+    float dist = smoothstep(0.0, 1.0, distance(objectPosition.xyz, objectStartPosition.xyz) / maxDistance);
     float cutoff = mix(texture(noiseTexture, uv.zw).r, dist, distanceEffect);
     if(cutoff <= threshold){
       discard;
