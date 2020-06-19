@@ -26,7 +26,7 @@ export class FromPointDissolve extends Component {
         this.dissolveMat.setProperty("objectStartPosition", v4(this.localStartPosition.x, this.localStartPosition.y, this.localStartPosition.z, 0));
 
         //设置距离对消融的影响程度，[0, 1]
-        this.dissolveMat.setProperty("distanceEffect", 0.5);
+        this.dissolveMat.setProperty("distanceEffect", 0.85);
     }
 
     public update(dt): void {
