@@ -9,7 +9,9 @@ CCEffect %{
   - name: opaque
     passes:
     - vert: vs:vert
-      frag: fs:frag
+      frag: fs:frag     
+      rasterizerState:
+        cullMode: none
       properties: &props
         mainTexture:          { value: white, editor: { displayName: "主纹理", type: sampler2D } }
         noiseTexture:         { value: grey, editor: { displayName: "噪点纹理", types: sampler2D } }
@@ -31,8 +33,8 @@ CCProgram vs %{
   in vec2 a_texCoord;
 
   out vec4 uv;
-  out vec4 worldPosition;
-  out vec4 worldNormal;
+  out vec4 position;
+  out vec4 normal;
 
   vec4 vert(){
     StandardVertInput vertex;
@@ -40,8 +42,8 @@ CCProgram vs %{
 
     uv.xy = a_texCoord;
     uv.zw = a_texCoord;
-    worldPosition = objectToWorld(vertex.position);
-    worldNormal = objectToWorld(vec4(vertex.normal, 0.0));
+    position = vertex.position;
+    normal = vec4(vertex.normal, 0.0);
 
     return objectToClipPos(vertex.position);
   }
@@ -52,6 +54,7 @@ CCProgram fs %{
   precision highp float;
 
   #include <cc-global>
+  #include "../../Util/Util"
 
   uniform sampler2D mainTexture;
   uniform sampler2D noiseTexture;
@@ -67,12 +70,15 @@ CCProgram fs %{
   };
 
   in vec4 uv;
-  in vec4 worldPosition;
-  in vec4 worldNormal;
+  in vec4 position;
+  in vec4 normal;
 
   vec4 frag(){
-    float dist = min(1.0, distance(worldPosition, targetPosition) / maxDistance);
-
+    vec4 objectTargetPostion = worldToObject(targetPosition);
+  
+    //FIXME: 此处公式有误
+    float dist = min(1.0, distance(position, objectTargetPostion) / maxDistance);
+  
     float cutoff = mix(texture(noiseTexture, uv.zw).r, 1.0 - dist, distanceEffect);
     if(cutoff <= threshold){
       discard;
@@ -83,7 +89,7 @@ CCProgram fs %{
     vec4 edgeColor = texture(rampTexture, vec2(degree, degree));
 
     vec4 albedo = texture(mainTexture, uv.xy);
-    vec3 normal = normalize(worldNormal.xyz);
+    vec3 normal = normalize(normal.xyz);
     vec3 diffuseColor = cc_mainLitColor.rgb * albedo.rgb * max(0.0, dot(normal, -cc_mainLitDir.xyz));
 
     return vec4(mix(edgeColor.rgb, diffuseColor, degree), 1.0);
