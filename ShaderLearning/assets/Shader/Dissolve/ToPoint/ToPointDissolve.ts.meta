@@ -1,0 +1,15 @@
+{
+  "ver": "2.0.14",
+  "importer": "typescript",
+  "imported": true,
+  "uuid": "89d059ad-2d70-491a-bc66-d3c6ccd86dc8",
+  "files": [
+    ".js",
+    ".trans"
+  ],
+  "subMetas": {},
+  "userData": {
+    "importAsPlugin": false,
+    "moduleId": "project:///assets/Shader/Dissolve/ToPoint/ToPointDissolve.js"
+  }
+}

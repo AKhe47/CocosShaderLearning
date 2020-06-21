@@ -4,7 +4,7 @@
   "_objFlags": 0,
   "_native": "",
   "_effectAsset": {
-    "__uuid__": "2277ff34-c361-4c06-9485-89f39a49afcb"
+    "__uuid__": "6113b679-b01a-404b-8f5d-2735e36d7f02"
   },
   "_techIdx": 0,
   "_defines": [
@@ -32,10 +32,7 @@
       "rampTexture": {
         "__uuid__": "ff902923-f77f-4196-9d8c-3489f3bac2d6@6c48a"
       },
-      "threshold": 1,
-      "edgeLength": 0.05,
-      "maxDistance": 3,
-      "distanceEffect": 1
+      "threshold": 0
     }
   ]
 }
