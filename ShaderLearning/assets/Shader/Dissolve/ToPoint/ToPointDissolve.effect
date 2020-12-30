@@ -1,0 +1,98 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-06-19 12:02:21 
+ * @Description: 最后收束到一个点的消融效果
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag     
+      rasterizerState:
+        cullMode: none
+      properties: &props
+        mainTexture:          { value: white, editor: { displayName: "主纹理", type: sampler2D } }
+        noiseTexture:         { value: grey, editor: { displayName: "噪点纹理", types: sampler2D } }
+        rampTexture:          { value: white, editor: { displayName: "渐变纹理", type: sampler2D } }
+        color:                { value: [1, 1, 1, 1], editor: { displayName: "主颜色", type: color } }
+        targetPosition:       { value: [0, 0, 0, 0], editor: { displayName: "目标点世界坐标", type: vec4 } }
+        threshold:            { value: 0.5, editor: { displayName: "控制阈值", type: float } }
+        edgeLength:           { value: 0.03, editor: { displayName: "边界宽度控制", type: float } }
+        maxDistance:          { value: 1, editor: { displayName: "目标点到最远定点的距离", type: float } }
+        distanceEffect:       { value: 0.5, editor: { displayName: "距离对消融程度的影响", type: float } }
+}%
+
+CCProgram vs %{
+  precision highp float;
+
+  #include <input-standard>
+  #include "../../Util/Util"
+
+  in vec2 a_texCoord;
+
+  out vec4 uv;
+  out vec4 position;
+  out vec4 normal;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    uv.xy = a_texCoord;
+    uv.zw = a_texCoord;
+    position = vertex.position;
+    normal = vec4(vertex.normal, 0.0);
+
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+CCProgram fs %{
+  precision highp float;
+
+  #include <cc-global>
+  #include "../../Util/Util"
+
+  uniform sampler2D mainTexture;
+  uniform sampler2D noiseTexture;
+  uniform sampler2D rampTexture;
+
+  uniform FragmentData{
+    vec4 color;
+    vec4 targetPosition;
+    float threshold;
+    float edgeLength;
+    float maxDistance;
+    float distanceEffect;
+  };
+
+  in vec4 uv;
+  in vec4 position;
+  in vec4 normal;
+
+  vec4 frag(){
+    vec4 objectTargetPostion = worldToObject(targetPosition);
+  
+    //FIXME: 此处公式有误
+    float dist = min(1.0, distance(position, objectTargetPostion) / maxDistance);
+  
+    float cutoff = mix(texture(noiseTexture, uv.zw).r, 1.0 - dist, distanceEffect);
+    if(cutoff <= threshold){
+      discard;
+    }
+
+    float degree = min(1.0, (cutoff - threshold) / edgeLength);
+
+    vec4 edgeColor = texture(rampTexture, vec2(degree, degree));
+
+    vec4 albedo = texture(mainTexture, uv.xy);
+    vec3 normal = normalize(normal.xyz);
+    vec3 diffuseColor = cc_mainLitColor.rgb * albedo.rgb * max(0.0, dot(normal, -cc_mainLitDir.xyz));
+
+    return vec4(mix(edgeColor.rgb, diffuseColor, degree), 1.0);
+  }
+
+}%

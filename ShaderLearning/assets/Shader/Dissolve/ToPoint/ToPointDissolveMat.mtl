@@ -4,7 +4,7 @@
   "_objFlags": 0,
   "_native": "",
   "_effectAsset": {
-    "__uuid__": "1989662a-4059-4b44-ba1f-248cd5195536"
+    "__uuid__": "6113b679-b01a-404b-8f5d-2735e36d7f02"
   },
   "_techIdx": 0,
   "_defines": [
@@ -23,21 +23,16 @@
   ],
   "_props": [
     {
-      "color": {
-        "__type__": "cc.Color",
-        "r": 71,
-        "g": 42,
-        "b": 42,
-        "a": 255
+      "mainTexture": {
+        "__uuid__": "357bf226-aeec-4eda-9043-5695be073ed3@6c48a"
       },
-      "specular": {
-        "__type__": "cc.Color",
-        "r": 86,
-        "g": 139,
-        "b": 195,
-        "a": 255
+      "noiseTexture": {
+        "__uuid__": "da0834aa-1c00-413d-bd17-87b1ce09f259@6c48a"
       },
-      "gloss": 8
+      "rampTexture": {
+        "__uuid__": "ff902923-f77f-4196-9d8c-3489f3bac2d6@6c48a"
+      },
+      "threshold": 0
     }
   ]
 }

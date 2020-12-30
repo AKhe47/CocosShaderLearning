@@ -1,0 +1,88 @@
+/*
+ * @Author: Dreamy Icecream 
+ * @Date: 2020-06-17 22:53:47 
+ * @Description: 混合物体原颜色的消融效果
+ * @Last Modified by: Dreamy Icecream
+ * @Last Modified time: 2020-06-18 11:08:03
+ */
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      properties: &props
+        mainTexture:      { value: white, editor: { displayName: "主材质", type: sampler2D } }
+        noiseTexture:     { value: grey,  editor: { displayName: "噪点材质", type: sampler2D } }
+        edgeFirstColor:   { value: [0, 0, 0, 0], editor: { displayName: "边界颜色1", type: color } }
+        edgeSecondColor:  { value: [1, 1, 1, 1], editor: { displayName: "边界颜色2", type: color } }
+        threshold:        { value: 0.5, editor: { displayName: "阈值控制", type: float } }
+        edgeLength:       { value: 0.03, editor: { displayName: "边界宽度控制", type: float } }
+  - name: transparent
+    passes:
+    - vert: vs:vert
+      frag: fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram vs %{
+  precision highp float;
+
+  #include <input-standard>
+  #include "../../Util/Util"
+
+  in vec2 a_texCoord;
+
+  out vec4 uv;
+
+  vec4 vert(){
+    StandardVertInput vertex;
+    CCVertInput(vertex);
+
+    uv.xy = a_texCoord;
+    uv.zw = a_texCoord;
+
+    return objectToClipPos(vertex.position);
+  }
+
+}%
+
+
+CCProgram fs %{
+  precision highp float;
+
+  in vec4 uv;
+
+  uniform sampler2D mainTexture;
+  uniform sampler2D noiseTexture;
+
+  uniform FragmentData{
+    vec4 edgeFirstColor;
+    vec4 edgeSecondColor;
+    float edgeLength;
+    float threshold;
+  };
+
+  vec4 frag(){
+    float cutout = texture(noiseTexture, uv.zw).r;
+    if(cutout <= threshold){
+      discard;
+    }
+
+    float degree = min(1.0, (cutout - threshold) / edgeLength);
+    vec4 edgeColor = mix(edgeFirstColor, edgeSecondColor, degree);
+
+    vec4 orgColor = texture(mainTexture, uv.xy);
+    // return edgeColor;
+    return vec4(mix(edgeColor, orgColor, degree).rgb, 1.0);
+  }
+
+}%
